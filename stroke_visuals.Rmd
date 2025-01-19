@@ -1,0 +1,100 @@
+---
+title: "Stroke Maps"
+author: "Anh Vo"
+date: "2023-12-13"
+output: html_document
+---
+
+```{r}
+library(rnaturalearth)
+library(ggplot2)
+library(rnaturalearthhires)
+library(sf)
+library(dplyr)
+
+setwd("/Users/anh.vo/Documents")
+data <- read.csv("Stroke_2010_2019.csv")
+```
+
+
+```{r}
+us_states <- ne_states(country = "United States of America", returnclass = "sf")
+
+```
+
+```{r}
+data2 <- data %>%
+  group_by(Year, LocationAbbr) %>%
+  summarize(Mortality_Rate = mean(Data_Value, na.rm = T))
+```
+
+
+```{r}
+# Merge your data with state geometries
+merged_data <- merge(us_states, data2, by.x = "postal", by.y = "LocationAbbr")
+unique_years <- unique(data2$Year)
+# Plot the U.S. states with stroke mortality rate gradient
+# Define the common scale limits for the legend
+legend_limits <- c(0, 180)
+
+for (year in unique_years) {
+  plot <- ggplot(data = merged_data[merged_data$Year == year,]) +
+    geom_sf(aes(fill = Mortality_Rate), color = "white", lwd = 0.5) +
+    scale_fill_gradient(low = "lightblue", high = "navy", name = "Mortality Rate (per 100,000 people)", limits = legend_limits) +
+    theme_void() +
+    ggtitle(paste(year, " - Stroke Mortality Rates in U.S. States")) +
+    coord_sf(xlim = c(-130, -65), ylim = c(24, 50))  # Adjust longitude and latitude limits
+
+  filename <- paste("/Users/anh.vo/Documents/plot_", year, ".png", sep = "")
+  ggsave(filename, plot)
+}
+
+```
+
+```{r}
+age <- ggplot(data, aes(x = Stratification1)) +
+  geom_bar() +
+  labs(title = "Count of Age Groups", 
+       x = "Age Group", 
+       y = "Count") +
+  theme_minimal()
+
+ggsave("/Users/anh.vo/Documents/age.png", age)
+```
+
+```{r}
+race <- ggplot(data, aes(x = Stratification2)) +
+  geom_bar() +
+  labs(title = "Count of Race Groups", 
+       x = "Race Group", 
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggsave("/Users/anh.vo/Documents/race.png", race)
+```
+
+```{r}
+gender <- ggplot(data, aes(x = Stratification3)) +
+  geom_bar() +
+  labs(title = "Count of Gender Groups", 
+       x = "Gender Group", 
+       y = "Count") +
+  theme_minimal() + scale_y_continuous(labels = scales::comma) 
+
+ggsave("/Users/anh.vo/Documents/gender.png", gender)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
